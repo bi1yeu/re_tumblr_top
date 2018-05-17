@@ -3,6 +3,11 @@ import logo from './logo.svg';
 import './App.css';
 
 import fetch from 'fetch-retry';
+function range(to, step) {
+  return Array.from(new Array(to), (x,i) => i)
+              .filter((i) => i % step === 0);
+}
+
 const Post = ({ post }) => {
   return(
     <div>
@@ -15,6 +20,7 @@ const Post = ({ post }) => {
           src={post.photos[0].alt_sizes[1].url} /> :
         <div dangerouslySetInnerHTML={{ __html: post.body }} />
       }
+      <hr />
     </div>
   );
 }
@@ -32,33 +38,42 @@ class App extends Component {
     this.onSubmit = this.onSubmit.bind(this);
   }
 
-  getPosts() {
-    const url = new URL(`https://api.tumblr.com/v2/blog/${this.state.blogName}/posts`);
-    const limit = 20;
-    var params = {api_key: API_KEY,
-                  limit: limit,
-                  reblog_info: true};
-    const max_posts = 2000; // this.state.blog.total_posts;
-    var fetchedPosts = []
+  shouldComponentUpdate(nextProps, nextState) {
+    /* Fetching and filtering the post list is expensive, so don't try to
+    rerender every 20 posts */
+    /* return this.state.totalFetchedPosts === nextState.totalFetchedPosts || this.state.totalFetchedPosts + 100 < nextState.totalFetchedPosts || nextState.totalFetchedPosts >= this.state.blog.total_posts; */
 
-    for (var i = 0; i < max_posts; i += limit) {
-      params.offset = i;
-      url.search = new URLSearchParams(params)
+    // TODO not updating when submitting a subsequent blog
+    return this.state.totalFetchedPosts === 0 || this.state.totalFetchedPosts === nextState.totalFetchedPosts || nextState.totalFetchedPosts % 100 === 0 || nextState.totalFetchedPosts >= 2000 || nextState.totalFetchedPosts >= this.state.blog.total_posts;
+  }
+
+  getPosts() {
+    const stepSize = 20;
+    /* const maxPosts = this.state.blog.total_posts; */
+    const maxPosts = Math.min(2000, this.state.blog.total_posts);
+
+    let urls = range(maxPosts, stepSize).map((offset) => {
+      const url = new URL(`https://api.tumblr.com/v2/blog/${this.state.blogName}/posts`);
+      const params = {api_key: API_KEY,
+                      stepSize,
+                      reblog_info: true,
+                      offset};
+      url.search = new URLSearchParams(params);
+      return url;
+    });
+
+    urls.map((url, i) =>
       fetch(url)
         .then(data => data.json())
-        .then(data => {
-          fetchedPosts = fetchedPosts.concat(data.response.posts);
-          if (i % 100 == 0 || i == max_posts) {
-            const totalFetchedPosts = this.state.totalFetchedPosts + fetchedPosts.length;
-            const filteredPosts = this.state.posts
-                                      .concat(fetchedPosts)
-                                      .filter(this.postIsOriginal)
-                                      .sort((a, b) => a.note_count < b.note_count);
-            this.setState({posts: filteredPosts, totalFetchedPosts});
-            fetchedPosts = []
-          }
-        });
-    }
+        .then(({response}) => {
+          const fetchedPosts = response.posts;
+          // TODO do this filtering in the render?
+          const filteredPosts = this.state.posts
+                                    .concat(fetchedPosts);
+          this.setState({posts: filteredPosts,
+                         totalFetchedPosts: this.state.totalFetchedPosts + fetchedPosts.length});
+        })
+    );
   }
 
   getBlogInfo() {
@@ -66,7 +81,7 @@ class App extends Component {
     const params = {api_key: API_KEY}
     url.search = new URLSearchParams(params)
 
-    fetch(url, {
+    return fetch(url, {
       method: 'GET'
     })
       .then(data => data.json())
@@ -105,13 +120,15 @@ class App extends Component {
 
   onSubmit(e) {
     this.setState({blog: {}, posts: [], totalFetchedPosts: 0});
-    this.getBlogInfo();
-    this.getPosts();
+    this.getBlogInfo().then(() => this.getPosts());
     e.preventDefault();
   }
 
   render() {
-    const posts = this.state.posts.map(p => <Post key={p.id} post={p} />);
+    const posts = this.state.posts
+                      .filter(this.postIsOriginal)
+                      .sort((a, b) => a.note_count < b.note_count)
+                      .map(p => <Post key={p.id} post={p} />);
     return (
       <div className="App">
         <header className="App-header">
