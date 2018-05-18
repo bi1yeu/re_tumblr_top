@@ -43,7 +43,8 @@ class App extends Component {
       blog: {},
       posts: [],
       totalFetchedPosts: 0,
-      displayNumPosts: 15
+      displayNumPosts: 15,
+      error: ''
     };
     this.onChange = this.onChange.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
@@ -84,7 +85,7 @@ class App extends Component {
             this.setState({posts: filteredPosts,
                            totalFetchedPosts: this.state.totalFetchedPosts + fetchedPosts.length});
           })
-          .catch((e) => console.log(e))
+          .catch(e => this.setState({error: e.message}))
         return request;
       });
   }
@@ -99,7 +100,7 @@ class App extends Component {
     })
     .then(handleResponse)
     .then(info => this.setState({blog: info.response.blog}))
-    .catch(e => console.log(e));
+    .catch(e => this.setState({error: e.message}))
   }
 
   postIsOriginal(post) {
@@ -133,7 +134,10 @@ class App extends Component {
   }
 
   onSubmit(evt) {
-    this.setState({blog: {}, posts: [], totalFetchedPosts: 0});
+    this.setState({blog: {},
+                   posts: [],
+                   totalFetchedPosts: 0,
+                   error: ''});
     if (this.state.blogName.indexOf('.tumblr.com') === -1) {
       this.setState({blogName: this.state.blogName + '.tumblr.com'});
     }
@@ -152,6 +156,11 @@ class App extends Component {
         <header className="App-header">
           <h1 className="App-title">Tumblr Top</h1>
         </header>
+        {
+          this.state.error ?
+          this.state.error :
+          <div />
+        }
         <form onSubmit={this.onSubmit}>
           <input type="text"
             name="blogName"
