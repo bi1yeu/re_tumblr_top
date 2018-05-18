@@ -1,11 +1,21 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
 import './App.css';
 
 import fetch from 'fetch-retry';
-function range(to, step) {
-  return Array.from(new Array(to), (x,i) => i)
-              .filter((i) => i % step === 0);
+const range = (to, step) =>
+  Array.from(new Array(to), (x,i) => i)
+       .filter((i) => i % step === 0);
+
+const handleResponse = (response) => {
+  if (!response.ok) {
+    var errorMessage = 'Something went wrong.'
+    if (response.status === 429) {
+      errorMessage = 'Too many requests. Please try again later.'
+    }
+    throw Error(errorMessage);
+  } else {
+    return response.json();
+  }
 }
 
 const Post = ({ post }) => {
@@ -46,7 +56,7 @@ class App extends Component {
 
     const updateEveryNPosts = 100;
 
-    return this.state.totalFetchedPosts === 0 ||
+    return this.state.totalFetchedPosts <= 40 ||
            this.state.totalFetchedPosts === nextState.totalFetchedPosts ||
            nextState.totalFetchedPosts % updateEveryNPosts === 0 ||
            nextState.totalFetchedPosts >= this.state.blog.total_posts;
@@ -59,23 +69,24 @@ class App extends Component {
       .map((offset) => {
         const url = new URL(`https://api.tumblr.com/v2/blog/${this.state.blogName}/posts`);
         const params = {api_key: API_KEY,
-                        stepSize,
+                        limit: stepSize,
                         reblog_info: true,
                         offset};
         url.search = new URLSearchParams(params);
         return url;
       })
-      .map((url) =>
-        fetch(url)
-          .then(data => data.json())
-          .then(({response}) => {
+      .map((url) => {
+        const request = fetch(url)
+          .then(handleResponse)
+          .then(({ response }) => {
             const fetchedPosts = response.posts;
             const filteredPosts = this.state.posts.concat(fetchedPosts);
             this.setState({posts: filteredPosts,
                            totalFetchedPosts: this.state.totalFetchedPosts + fetchedPosts.length});
           })
           .catch((e) => console.log(e))
-      );
+        return request;
+      });
   }
 
   getBlogInfo() {
@@ -86,8 +97,9 @@ class App extends Component {
     return fetch(url, {
       method: 'GET'
     })
-      .then(data => data.json())
-      .then(info => this.setState({blog: info.response.blog}))
+    .then(handleResponse)
+    .then(info => this.setState({blog: info.response.blog}))
+    .catch(e => console.log(e));
   }
 
   postIsOriginal(post) {
@@ -116,14 +128,17 @@ class App extends Component {
     return true;
   }
 
-  onChange(e) {
-    this.setState({[e.target.name]: e.target.value})
+  onChange(evt) {
+    this.setState({[evt.target.name]: evt.target.value})
   }
 
-  onSubmit(e) {
+  onSubmit(evt) {
     this.setState({blog: {}, posts: [], totalFetchedPosts: 0});
+    if (this.state.blogName.indexOf('.tumblr.com') === -1) {
+      this.setState({blogName: this.state.blogName + '.tumblr.com'});
+    }
     this.getBlogInfo().then(() => this.getPosts());
-    e.preventDefault();
+    evt.preventDefault();
   }
 
   render() {
