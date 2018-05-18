@@ -32,19 +32,31 @@ class App extends Component {
       blogName: '',
       blog: {},
       posts: [],
-      totalFetchedPosts: 0
+      totalFetchedPosts: 0,
+      displayNumPosts: 15
     };
     this.onChange = this.onChange.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
+    this.postIsOriginal = this.postIsOriginal.bind(this);
   }
 
   shouldComponentUpdate(nextProps, nextState) {
-    /* Fetching and filtering the post list is expensive, so don't try to
-    rerender every 20 posts */
-    /* return this.state.totalFetchedPosts === nextState.totalFetchedPosts || this.state.totalFetchedPosts + 100 < nextState.totalFetchedPosts || nextState.totalFetchedPosts >= this.state.blog.total_posts; */
+    /* Can only fetch 20 posts at a time, don't want to sort, filter, and
+       rerender after every fetch */
 
-    // TODO not updating when submitting a subsequent blog
-    return this.state.totalFetchedPosts === 0 || this.state.totalFetchedPosts === nextState.totalFetchedPosts || nextState.totalFetchedPosts % 100 === 0 || nextState.totalFetchedPosts >= 2000 || nextState.totalFetchedPosts >= this.state.blog.total_posts;
+    const updateEveryNPosts = 100;
+
+    /* return this.state.totalFetchedPosts === 0 ||
+     *        this.state.totalFetchedPosts === nextState.totalFetchedPosts ||
+     *        nextState.totalFetchedPosts % updateEveryNPosts === 0 ||
+     *        nextState.totalFetchedPosts >= this.state.blog.total_posts;
+     */
+
+    return this.state.totalFetchedPosts === 0 ||
+           this.state.totalFetchedPosts === nextState.totalFetchedPosts ||
+           nextState.totalFetchedPosts % updateEveryNPosts === 0 ||
+           nextState.totalFetchedPosts >= 2000 ||
+           nextState.totalFetchedPosts >= this.state.blog.total_posts;
   }
 
   getPosts() {
@@ -102,7 +114,7 @@ class App extends Component {
     if (post.trail &&
         post.trail.length > 0 &&
         post.trail[0] &&
-        post.trail[0].content.indexOf('.tumblr.com/' !== -1)) {
+        post.trail[0].blog.name !== this.state.blogName.replace(/\.tumblr\.com/, '')) {
       return false;
     }
 
@@ -128,6 +140,7 @@ class App extends Component {
     const posts = this.state.posts
                       .filter(this.postIsOriginal)
                       .sort((a, b) => a.note_count < b.note_count)
+                      .slice(0, this.state.displayNumPosts)
                       .map(p => <Post key={p.id} post={p} />);
     return (
       <div className="App">
