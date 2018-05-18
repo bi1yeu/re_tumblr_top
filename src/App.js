@@ -9,7 +9,9 @@ const range = (to, step) =>
 const handleResponse = (response) => {
   if (!response.ok) {
     var errorMessage = 'Something went wrong.'
-    if (response.status === 429) {
+    if (response.status === 404) {
+      errorMessage = "Couldn't find that blog, sorry.";
+    } else if (response.status === 429) {
       errorMessage = 'Too many requests. Please try again later.'
     }
     throw Error(errorMessage);
@@ -49,6 +51,14 @@ class App extends Component {
     this.onChange = this.onChange.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
     this.postIsOriginal = this.postIsOriginal.bind(this);
+  }
+
+  componentDidMount() {
+    const path = window.location.pathname.split('/');
+    if (path.filter(p => p !== '').length > 0) {
+      const blogName = path[path.length - 1];
+      this.setState({blogName}, () => this.onSubmit());
+    }
   }
 
   shouldComponentUpdate(nextProps, nextState) {
@@ -126,6 +136,11 @@ class App extends Component {
       return false;
     }
 
+    /* Some really old posts have the reblog path under a `content` key */
+    if (post.reblog && post.reblog.content && post.reblog.content.indexOf('.tumblr.com/') !== -1) {
+      return false;
+    }
+
     return true;
   }
 
@@ -141,8 +156,17 @@ class App extends Component {
     if (this.state.blogName.indexOf('.tumblr.com') === -1) {
       this.setState({blogName: this.state.blogName + '.tumblr.com'});
     }
+
+    // TODO account for if this page is hosted not at root
+    const path = window.location.pathname.split('/');
+    const newPathName = path.splice(0, path.length - 1).join('/') +
+                        this.state.blogName.replace(/\.tumblr\.com/, '');
+    window.history.pushState(null, '', newPathName);
+
     this.getBlogInfo().then(() => this.getPosts());
-    evt.preventDefault();
+    if (evt) {
+      evt.preventDefault();
+    }
   }
 
   render() {
@@ -170,7 +194,7 @@ class App extends Component {
             Submit
           </button>
         </form>
-        <h2>{ this.state.blogName }</h2>
+        <h2>{ this.state.blog.name }</h2>
         <h3>{ this.state.blog.title }</h3>
         <div>
           Fetched {this.state.totalFetchedPosts } of { this.state.blog.total_posts || 0}
