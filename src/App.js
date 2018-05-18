@@ -46,46 +46,36 @@ class App extends Component {
 
     const updateEveryNPosts = 100;
 
-    /* return this.state.totalFetchedPosts === 0 ||
-     *        this.state.totalFetchedPosts === nextState.totalFetchedPosts ||
-     *        nextState.totalFetchedPosts % updateEveryNPosts === 0 ||
-     *        nextState.totalFetchedPosts >= this.state.blog.total_posts;
-     */
-
     return this.state.totalFetchedPosts === 0 ||
            this.state.totalFetchedPosts === nextState.totalFetchedPosts ||
            nextState.totalFetchedPosts % updateEveryNPosts === 0 ||
-           nextState.totalFetchedPosts >= 2000 ||
            nextState.totalFetchedPosts >= this.state.blog.total_posts;
   }
 
   getPosts() {
     const stepSize = 20;
-    /* const maxPosts = this.state.blog.total_posts; */
-    const maxPosts = Math.min(2000, this.state.blog.total_posts);
 
-    let urls = range(maxPosts, stepSize).map((offset) => {
-      const url = new URL(`https://api.tumblr.com/v2/blog/${this.state.blogName}/posts`);
-      const params = {api_key: API_KEY,
-                      stepSize,
-                      reblog_info: true,
-                      offset};
-      url.search = new URLSearchParams(params);
-      return url;
-    });
-
-    urls.map((url, i) =>
-      fetch(url)
-        .then(data => data.json())
-        .then(({response}) => {
-          const fetchedPosts = response.posts;
-          // TODO do this filtering in the render?
-          const filteredPosts = this.state.posts
-                                    .concat(fetchedPosts);
-          this.setState({posts: filteredPosts,
-                         totalFetchedPosts: this.state.totalFetchedPosts + fetchedPosts.length});
-        })
-    );
+    range(this.state.blog.total_posts, stepSize)
+      .map((offset) => {
+        const url = new URL(`https://api.tumblr.com/v2/blog/${this.state.blogName}/posts`);
+        const params = {api_key: API_KEY,
+                        stepSize,
+                        reblog_info: true,
+                        offset};
+        url.search = new URLSearchParams(params);
+        return url;
+      })
+      .map((url) =>
+        fetch(url)
+          .then(data => data.json())
+          .then(({response}) => {
+            const fetchedPosts = response.posts;
+            const filteredPosts = this.state.posts.concat(fetchedPosts);
+            this.setState({posts: filteredPosts,
+                           totalFetchedPosts: this.state.totalFetchedPosts + fetchedPosts.length});
+          })
+          .catch((e) => console.log(e))
+      );
   }
 
   getBlogInfo() {
@@ -145,8 +135,7 @@ class App extends Component {
     return (
       <div className="App">
         <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to React</h1>
+          <h1 className="App-title">Tumblr Top</h1>
         </header>
         <form onSubmit={this.onSubmit}>
           <input type="text"
