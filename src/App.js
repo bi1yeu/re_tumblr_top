@@ -3,10 +3,12 @@ import { Button,
          Container,
          Divider,
          Form,
+         Grid,
          Header,
          Input,
          Message,
-         Progress} from 'semantic-ui-react';
+         Progress,
+         Visibility} from 'semantic-ui-react';
 
 import fetch from 'fetch-retry';
 const range = (to, step) =>
@@ -52,13 +54,14 @@ class App extends Component {
       blog: {},
       posts: [],
       totalFetchedPosts: 0,
-      displayNumPosts: 15,
+      numVisiblePosts: 15,
       error: '',
       loadingPosts: false
     };
     this.onChange = this.onChange.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
     this.postIsOriginal = this.postIsOriginal.bind(this);
+    this.handleInfScrollingUpdate = this.handleInfScrollingUpdate.bind(this);
   }
 
   componentDidMount() {
@@ -79,6 +82,12 @@ class App extends Component {
            this.state.totalFetchedPosts === nextState.totalFetchedPosts ||
            nextState.totalFetchedPosts % updateEveryNPosts === 0 ||
            nextState.totalFetchedPosts >= this.state.blog.total_posts;
+  }
+
+  handleInfScrollingUpdate(evt, {calculations}) {
+    if (calculations.onScreen && this.state.posts.length > 0) {
+      this.setState({numVisiblePosts: this.state.numVisiblePosts + 1});
+    }
   }
 
   getPosts() {
@@ -165,6 +174,7 @@ class App extends Component {
                    posts: [],
                    loadingPosts: false,
                    totalFetchedPosts: 0,
+                   numVisiblePosts: 15,
                    error: ''});
     if (this.state.blogName.indexOf('.tumblr.com') === -1) {
       this.setState({blogName: this.state.blogName + '.tumblr.com'});
@@ -186,7 +196,7 @@ class App extends Component {
     const posts = this.state.posts
                       .filter(this.postIsOriginal)
                       .sort((a, b) => a.note_count < b.note_count)
-                      .slice(0, this.state.displayNumPosts)
+                      .slice(0, this.state.numVisiblePosts)
                       .map(p => <Post key={p.id} post={p} />);
     const progressPercent = (this.state.totalFetchedPosts / this.state.blog.total_posts) * 100.0;
     return (
@@ -213,21 +223,25 @@ class App extends Component {
             </Message> :
             <div />
           }
-          <Form onSubmit={this.onSubmit}>
-            <Form.Field>
-              <label>Blog Name</label>
-              <Input
-                type="text"
-                name="blogName"
-                onChange={this.onChange}
-                value={this.state.blogName}
-                loading={this.state.loadingPosts}
-                placeholder="Blog name (e.g. 1041uuu)"/>
-            </Form.Field>
-            <Button type="submit" disabled={this.state.blogName === ''}>
-              Get Posts
-            </Button>
-          </Form>
+          <Grid>
+            <Grid.Column width={8}>
+              <Form onSubmit={this.onSubmit}>
+                <Form.Field>
+                  <label>Blog Name</label>
+                  <Input
+                    type="text"
+                    name="blogName"
+                    onChange={this.onChange}
+                    value={this.state.blogName}
+                    loading={this.state.loadingPosts}
+                    placeholder="Blog name (e.g. 1041uuu)"/>
+                </Form.Field>
+                <Button type="submit" disabled={this.state.blogName === ''}>
+                  Get Posts
+                </Button>
+              </Form>
+            </Grid.Column>
+          </Grid>
           <h2>{ this.state.blog.name }</h2>
           <h3>{ this.state.blog.title }</h3>
           <div>
@@ -237,6 +251,7 @@ class App extends Component {
           <Divider />
           { posts }
         </Container>
+        <Visibility onUpdate={this.handleInfScrollingUpdate}>:)</Visibility>
       </div>
     );
   }
