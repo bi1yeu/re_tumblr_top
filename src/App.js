@@ -1,5 +1,12 @@
 import React, { Component } from 'react';
-import './App.css';
+import { Button,
+         Container,
+         Divider,
+         Form,
+         Header,
+         Input,
+         Message,
+         Progress} from 'semantic-ui-react';
 
 import fetch from 'fetch-retry';
 const range = (to, step) =>
@@ -12,7 +19,7 @@ const handleResponse = (response) => {
     if (response.status === 404) {
       errorMessage = "Couldn't find that blog, sorry.";
     } else if (response.status === 429) {
-      errorMessage = 'Too many requests. Please try again later.'
+      errorMessage = 'Too many requests. Please come back later.'
     }
     throw Error(errorMessage);
   } else {
@@ -46,7 +53,8 @@ class App extends Component {
       posts: [],
       totalFetchedPosts: 0,
       displayNumPosts: 15,
-      error: ''
+      error: '',
+      loadingPosts: false
     };
     this.onChange = this.onChange.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
@@ -76,7 +84,9 @@ class App extends Component {
   getPosts() {
     const stepSize = 20;
 
-    range(this.state.blog.total_posts, stepSize)
+    this.setState({loadingPosts: true});
+
+    const postRequests = range(this.state.blog.total_posts, stepSize)
       .map((offset) => {
         const url = new URL(`https://api.tumblr.com/v2/blog/${this.state.blogName}/posts`);
         const params = {api_key: API_KEY,
@@ -98,6 +108,8 @@ class App extends Component {
           .catch(e => this.setState({error: e.message}))
         return request;
       });
+
+    Promise.all(postRequests).then(() => this.setState({loadingPosts: false}));
   }
 
   getBlogInfo() {
@@ -151,6 +163,7 @@ class App extends Component {
   onSubmit(evt) {
     this.setState({blog: {},
                    posts: [],
+                   loadingPosts: false,
                    totalFetchedPosts: 0,
                    error: ''});
     if (this.state.blogName.indexOf('.tumblr.com') === -1) {
@@ -175,31 +188,55 @@ class App extends Component {
                       .sort((a, b) => a.note_count < b.note_count)
                       .slice(0, this.state.displayNumPosts)
                       .map(p => <Post key={p.id} post={p} />);
+    const progressPercent = (this.state.totalFetchedPosts / this.state.blog.total_posts) * 100.0;
     return (
-      <div className="App">
-        <header className="App-header">
-          <h1 className="App-title">Tumblr Top</h1>
-        </header>
-        {
-          this.state.error ?
-          this.state.error :
-          <div />
-        }
-        <form onSubmit={this.onSubmit}>
-          <input type="text"
-            name="blogName"
-            onChange={this.onChange}
-            value={this.state.blogName} />
-          <button type="submit">
-            Submit
-          </button>
-        </form>
-        <h2>{ this.state.blog.name }</h2>
-        <h3>{ this.state.blog.title }</h3>
-        <div>
-          Fetched {this.state.totalFetchedPosts } of { this.state.blog.total_posts || 0}
-        </div>
-        { posts }
+      <div>
+        <Container>
+          <Header>
+            <h1><a href="/">Tumblr Top</a></h1>
+            <Header.Subheader>
+              View a Tumblr Blog's best original posts
+            </Header.Subheader>
+          </Header>
+        </Container>
+        <Divider />
+        <Container>
+          {
+            this.state.error ?
+            <Message negative={true}>
+              <Message.Header>
+                Error
+              </Message.Header>
+              <p>
+                {this.state.error}
+              </p>
+            </Message> :
+            <div />
+          }
+          <Form onSubmit={this.onSubmit}>
+            <Form.Field>
+              <label>Blog Name</label>
+              <Input
+                type="text"
+                name="blogName"
+                onChange={this.onChange}
+                value={this.state.blogName}
+                loading={this.state.loadingPosts}
+                placeholder="Blog name (e.g. 1041uuu)"/>
+            </Form.Field>
+            <Button type="submit" disabled={this.state.blogName === ''}>
+              Get Posts
+            </Button>
+          </Form>
+          <h2>{ this.state.blog.name }</h2>
+          <h3>{ this.state.blog.title }</h3>
+          <div>
+            Read {this.state.totalFetchedPosts } of { this.state.blog.total_posts || 0} posts.
+          </div>
+          { progressPercent < 100 ? <Progress percent={progressPercent} /> : <div />}
+          <Divider />
+          { posts }
+        </Container>
       </div>
     );
   }
