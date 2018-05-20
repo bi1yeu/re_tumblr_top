@@ -1,16 +1,23 @@
 import React, { Component } from 'react';
 import { Button,
+         Card,
          Container,
          Divider,
          Form,
          Grid,
          Header,
+         Image,
          Input,
          Message,
          Progress,
          Visibility} from 'semantic-ui-react';
-
+import * as moment from 'moment';
 import fetch from 'fetch-retry';
+import './App.css';
+
+const DATE_INPUT_FORMAT = 'YYYY-MM-DD HH:mm:ss z'
+const DATE_OUTPUT_FORMAT = 'MMM D, YYYY';
+
 const range = (to, step) =>
   Array.from(new Array(to), (x,i) => i)
        .filter((i) => i % step === 0);
@@ -29,20 +36,82 @@ const handleResponse = (response) => {
   }
 }
 
-const Post = ({ post }) => {
+const Post = ({ post, idx}) => {
+  /* For audio/video posts, the player/player.embed_code property is HTML for an
+   * iframe with fixed sizes. This is janky, but it looks better than the canned
+   * width. */
+  let embedContent = null;
+  if (post.player) {
+    if (post.player instanceof Array &&
+        (typeof post.player[1].embed_code === 'string' ||
+         post.player[1].embed_code instanceof String)) {
+      embedContent = post.player[1].embed_code.replace(/width="\d+"/, "width=\"100%\"");
+    } else if (typeof post.player === 'string' || post.play instanceof String) {
+      embedContent = post.player.replace(/width="\d+"/, "width=\"100%\"").replace(/height="\d+"/, "height=\"30%\"");
+    }
+  }
+
   return(
-    <div>
-      <div>{post.title}</div>
-      <div>#notes: {post.note_count}</div>
-      <div dangerouslySetInnerHTML={{ __html: post.caption }} />
-      { post.type === 'photo' ?
-        <img alt={post.photos[0].caption || ""}
-          width="300"
-          src={post.photos[0].alt_sizes[1].url} /> :
-        <div dangerouslySetInnerHTML={{ __html: post.body }} />
-      }
-      <hr />
-    </div>
+    <Grid.Column width={5}>
+      <Card
+        fluid
+        href={post.post_url}
+        target="_blank"
+      >
+        <div className="cardContents">
+          {
+            post.type === 'photo' ? (
+              <div className="cardImage">
+                <Image alt={post.photos[0].caption || ""}
+                  src={post.photos[0].alt_sizes[1].url} />
+              </div>
+            ) : null
+          }
+          {
+            embedContent !== null ? (
+              <div className="cardImage">
+                <div dangerouslySetInnerHTML={{ __html: embedContent }} />
+              </div>
+            ) : null
+          }
+          <Card.Content className="cardWrittenContents">
+            {
+              post.title ? (
+                <Card.Header>{post.title}</Card.Header>
+              ) : null
+            }
+            <Card.Meta>
+              {moment(post.date, DATE_INPUT_FORMAT).format(DATE_OUTPUT_FORMAT)}
+            </Card.Meta>
+            {
+              post.caption ? (
+                <Card.Description>
+                  <div dangerouslySetInnerHTML={{ __html: post.caption }} />
+                </Card.Description>
+              ) : null
+            }
+            {
+              post.body ? (
+                <Card.Description>
+                  <div dangerouslySetInnerHTML={{ __html: post.body }} />
+                </Card.Description>
+              ) : null
+            }
+            {
+              post.type === 'quote' ? (
+                <Card.Description>
+                  <div dangerouslySetInnerHTML={{ __html: post.text }} />
+                  Source: <div dangerouslySetInnerHTML={{ __html: post.source }} />
+                </Card.Description>
+              ) : null
+            }
+          </Card.Content>
+        </div>
+        <Card.Content extra>
+          {post.note_count.toLocaleString()} notes
+        </Card.Content>
+      </Card>
+    </Grid.Column>
   );
 }
 
@@ -86,7 +155,7 @@ class App extends Component {
 
   handleInfScrollingUpdate(evt, {calculations}) {
     if (calculations.onScreen && this.state.posts.length > 0) {
-      this.setState({numVisiblePosts: this.state.numVisiblePosts + 1});
+      this.setState({numVisiblePosts: this.state.numVisiblePosts + 6});
     }
   }
 
@@ -157,8 +226,11 @@ class App extends Component {
       return false;
     }
 
-    /* Some really old posts have the reblog path under a `content` key */
-    if (post.reblog && post.reblog.content && post.reblog.content.indexOf('.tumblr.com/') !== -1) {
+    /* Some really old posts have the reblog path under a `comment` key */
+    if (post.reblog &&
+        post.reblog.comment &&
+        post.reblog.comment.indexOf('.tumblr.com/') !== -1 &&
+        post.reblog.comment.indexOf('via') !== -1) {
       return false;
     }
 
@@ -197,7 +269,7 @@ class App extends Component {
                       .filter(this.postIsOriginal)
                       .sort((a, b) => a.note_count < b.note_count)
                       .slice(0, this.state.numVisiblePosts)
-                      .map(p => <Post key={p.id} post={p} />);
+                      .map((p, i) => <Post key={p.id} post={p} idx={i}/>);
     const progressPercent = (this.state.totalFetchedPosts / this.state.blog.total_posts) * 100.0;
     return (
       <div>
@@ -212,16 +284,16 @@ class App extends Component {
         <Divider />
         <Container>
           {
-            this.state.error ?
-            <Message negative={true}>
-              <Message.Header>
-                Error
-              </Message.Header>
-              <p>
-                {this.state.error}
-              </p>
-            </Message> :
-            <div />
+            this.state.error ? (
+              <Message negative={true}>
+                <Message.Header>
+                  Error
+                </Message.Header>
+                <p>
+                  {this.state.error}
+                </p>
+              </Message>
+            ) : null
           }
           <Grid>
             <Grid.Column width={8}>
@@ -247,11 +319,17 @@ class App extends Component {
           <div>
             Read {this.state.totalFetchedPosts } of { this.state.blog.total_posts || 0} posts.
           </div>
-          { progressPercent < 100 ? <Progress percent={progressPercent} /> : <div />}
+          {
+            progressPercent < 100 ? (
+              <Progress percent={progressPercent} />
+            ) : null
+          }
           <Divider />
-          { posts }
+          <Grid centered>
+            { posts }
+          </Grid>
         </Container>
-        <Visibility onUpdate={this.handleInfScrollingUpdate}>:)</Visibility>
+        <Visibility className="infScroller" onUpdate={this.handleInfScrollingUpdate}>:)</Visibility>
       </div>
     );
   }
