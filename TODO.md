@@ -22,6 +22,7 @@
   - [ ] most popular post types
 - [ ] show link to page w/ copy option
 - [ ] footer
+- [ ] Make a 'Back to top button'
 - [ ] style polish
 - [ ] test production api key -- need to artificially slow down?
 - [ ] populate API key from env

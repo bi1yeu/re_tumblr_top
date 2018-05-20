@@ -253,8 +253,7 @@ class App extends Component {
     /* Some really old posts have the reblog path under a `comment` key */
     if (post.reblog &&
         post.reblog.comment &&
-        post.reblog.comment.indexOf('.tumblr.com/') !== -1 &&
-        post.reblog.comment.indexOf('via') !== -1) {
+        post.reblog.comment.indexOf('.tumblr.com/') !== -1) {
       return false;
     }
 
@@ -313,7 +312,7 @@ class App extends Component {
         <Container>
           {
             this.state.error ? (
-              <Message negative={true}>
+              <Message visible negative>
                 <Message.Header>
                   Error
                 </Message.Header>
@@ -357,7 +356,13 @@ class App extends Component {
             { posts }
           </Grid>
         </Container>
-        <Visibility className="infScroller" onUpdate={this.handleInfScrollingUpdate}>No more posts</Visibility>
+        {
+          this.state.posts.filter(this.postIsOriginal).length > 0 ? (
+            <Visibility className="infScroller" onUpdate={this.handleInfScrollingUpdate}>
+              No more posts
+            </Visibility>
+          ) : null
+        }
       </div>
     );
   }
