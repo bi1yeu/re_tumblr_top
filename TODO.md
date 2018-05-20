@@ -13,7 +13,8 @@
   - [x] sound
   - [ ] link
   - [x] quote
-- [ ] type filtering (only show photo posts, etc)  
+- [ ] type filtering (only show photo posts, etc)
+- [x] dynamically resize grid col with window
 - [ ] tabbed page for stats
   - [ ] reblogged vs new %
   - [ ] num notes
@@ -24,4 +25,5 @@
 - [ ] style polish
 - [ ] test production api key -- need to artificially slow down?
 - [ ] populate API key from env
-  
+- [ ] linting
+- [ ] refactoring

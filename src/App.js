@@ -17,6 +17,7 @@ import './App.css';
 
 const DATE_INPUT_FORMAT = 'YYYY-MM-DD HH:mm:ss z'
 const DATE_OUTPUT_FORMAT = 'MMM D, YYYY';
+const UPDATE_EVERY_N_POSTS = 100;
 
 const range = (to, step) =>
   Array.from(new Array(to), (x,i) => i)
@@ -34,9 +35,20 @@ const handleResponse = (response) => {
   } else {
     return response.json();
   }
-}
+};
 
-const Post = ({ post, idx}) => {
+/* Used to dynamically resize the columns depending on window width */
+const gridColWidth = (windowWidth) => {
+  if (windowWidth > 1100) {
+    return 5;
+  }
+  if (windowWidth > 600) {
+    return 8;
+  }
+  return 15;
+};
+
+const Post = ({ post, windowWidth }) => {
   /* For audio/video posts, the player/player.embed_code property is HTML for an
    * iframe with fixed sizes. This is janky, but it looks better than the canned
    * width. */
@@ -52,7 +64,7 @@ const Post = ({ post, idx}) => {
   }
 
   return(
-    <Grid.Column width={5}>
+    <Grid.Column width={gridColWidth(windowWidth)}>
       <Card
         fluid
         href={post.post_url}
@@ -113,7 +125,7 @@ const Post = ({ post, idx}) => {
       </Card>
     </Grid.Column>
   );
-}
+};
 
 class App extends Component {
   constructor(props) {
@@ -125,12 +137,15 @@ class App extends Component {
       totalFetchedPosts: 0,
       numVisiblePosts: 15,
       error: '',
-      loadingPosts: false
+      loadingPosts: false,
+      windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight,
     };
     this.onChange = this.onChange.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
     this.postIsOriginal = this.postIsOriginal.bind(this);
     this.handleInfScrollingUpdate = this.handleInfScrollingUpdate.bind(this);
+    this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
   }
 
   componentDidMount() {
@@ -139,18 +154,27 @@ class App extends Component {
       const blogName = path[path.length - 1];
       this.setState({blogName}, () => this.onSubmit());
     }
+    this.updateWindowDimensions();
+    window.addEventListener('resize', this.updateWindowDimensions);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.updateWindowDimensions);
   }
 
   shouldComponentUpdate(nextProps, nextState) {
     /* Can only fetch 20 posts at a time, don't want to sort, filter, and
        rerender after every fetch */
 
-    const updateEveryNPosts = 100;
-
     return this.state.totalFetchedPosts <= 40 ||
            this.state.totalFetchedPosts === nextState.totalFetchedPosts ||
-           nextState.totalFetchedPosts % updateEveryNPosts === 0 ||
+           nextState.totalFetchedPosts % UPDATE_EVERY_N_POSTS === 0 ||
            nextState.totalFetchedPosts >= this.state.blog.total_posts;
+  }
+
+  // via https://stackoverflow.com/a/42141641
+  updateWindowDimensions() {
+    this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight });
   }
 
   handleInfScrollingUpdate(evt, {calculations}) {
@@ -269,7 +293,11 @@ class App extends Component {
                       .filter(this.postIsOriginal)
                       .sort((a, b) => a.note_count < b.note_count)
                       .slice(0, this.state.numVisiblePosts)
-                      .map((p, i) => <Post key={p.id} post={p} idx={i}/>);
+                      .map(p => <Post
+                                  key={p.id}
+                                  post={p}
+                                  windowWidth={this.state.windowWidth}
+                                  windowHeight={this.state.windowHeight}/>);
     const progressPercent = (this.state.totalFetchedPosts / this.state.blog.total_posts) * 100.0;
     return (
       <div>
@@ -296,7 +324,7 @@ class App extends Component {
             ) : null
           }
           <Grid>
-            <Grid.Column width={8}>
+            <Grid.Column width={gridColWidth(this.state.windowWidth)}>
               <Form onSubmit={this.onSubmit}>
                 <Form.Field>
                   <label>Blog Name</label>
@@ -329,7 +357,7 @@ class App extends Component {
             { posts }
           </Grid>
         </Container>
-        <Visibility className="infScroller" onUpdate={this.handleInfScrollingUpdate}>:)</Visibility>
+        <Visibility className="infScroller" onUpdate={this.handleInfScrollingUpdate}>No more posts</Visibility>
       </div>
     );
   }
