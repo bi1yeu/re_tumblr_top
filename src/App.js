@@ -30,6 +30,8 @@ const handleResponse = (response) => {
       errorMessage = "Couldn't find that blog, sorry.";
     } else if (response.status === 429) {
       errorMessage = 'Too many requests. Please come back later.'
+    } else if (response.status === 401) {
+      errorMessage = "Can't get blog info from Tumblr.  Please come back later."
     }
     throw Error(errorMessage);
   } else {
@@ -70,7 +72,7 @@ const Post = ({ post, windowWidth }) => {
         href={post.post_url}
         target="_blank"
       >
-        <div className="cardContents">
+        <div className="card-contents">
           {
             post.type === 'photo' ? (
               <div className="cardImage">
@@ -86,15 +88,14 @@ const Post = ({ post, windowWidth }) => {
               </div>
             ) : null
           }
-          <Card.Content className="cardWrittenContents">
+          <Card.Content className="card-written-contents">
             {
               post.title ? (
-                <Card.Header>{post.title}</Card.Header>
+                <Header size="medium">
+                  {post.title}
+                </Header>
               ) : null
             }
-            <Card.Meta>
-              {moment(post.date, DATE_INPUT_FORMAT).format(DATE_OUTPUT_FORMAT)}
-            </Card.Meta>
             {
               post.caption ? (
                 <Card.Description>
@@ -120,7 +121,12 @@ const Post = ({ post, windowWidth }) => {
           </Card.Content>
         </div>
         <Card.Content extra>
-          {post.note_count.toLocaleString()} notes
+          <span>
+            {post.note_count.toLocaleString()} notes
+          </span>
+          <span className="pull-right">
+            {moment(post.date, DATE_INPUT_FORMAT).format(DATE_OUTPUT_FORMAT)}
+          </span>
         </Card.Content>
       </Card>
     </Grid.Column>
@@ -300,9 +306,9 @@ class App extends Component {
     const progressPercent = (this.state.totalFetchedPosts / this.state.blog.total_posts) * 100.0;
     return (
       <div>
-        <Container>
-          <Header>
-            <h1><a href="/">Tumblr Top</a></h1>
+        <Container text>
+          <Header as="h1">
+            <a href="/">Tumblr Top</a>
             <Header.Subheader>
               View a Tumblr Blog's best original posts
             </Header.Subheader>
@@ -324,7 +330,9 @@ class App extends Component {
           }
           <Grid>
             <Grid.Column width={gridColWidth(this.state.windowWidth)}>
-              <Form onSubmit={this.onSubmit}>
+              <Form
+                onSubmit={this.onSubmit}
+                loading={this.state.loadingPosts}>
                 <Form.Field>
                   <label>Blog Name</label>
                   <Input
@@ -332,7 +340,6 @@ class App extends Component {
                     name="blogName"
                     onChange={this.onChange}
                     value={this.state.blogName}
-                    loading={this.state.loadingPosts}
                     placeholder="Blog name (e.g. 1041uuu)"/>
                 </Form.Field>
                 <Button type="submit" disabled={this.state.blogName === ''}>
@@ -341,8 +348,12 @@ class App extends Component {
               </Form>
             </Grid.Column>
           </Grid>
-          <h2>{ this.state.blog.name }</h2>
-          <h3>{ this.state.blog.title }</h3>
+          <Header as="h2">
+            { this.state.blog.name }
+            <Header.Subheader>
+              { this.state.blog.title }
+            </Header.Subheader>
+          </Header>
           <div>
             Read {this.state.totalFetchedPosts } of { this.state.blog.total_posts || 0} posts.
           </div>
@@ -358,7 +369,7 @@ class App extends Component {
         </Container>
         {
           this.state.posts.filter(this.postIsOriginal).length > 0 ? (
-            <Visibility className="infScroller" onUpdate={this.handleInfScrollingUpdate}>
+            <Visibility className="inf-scroller" onUpdate={this.handleInfScrollingUpdate}>
               No more posts
             </Visibility>
           ) : null
