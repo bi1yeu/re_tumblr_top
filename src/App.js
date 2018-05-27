@@ -166,8 +166,8 @@ class App extends Component {
   }
 
   componentDidMount() {
-    const path = window.location.pathname.split('/');
-    if (path.filter(p => p !== '').length > 0) {
+    const path = window.location.pathname.split('/blog/');
+    if (path.filter(p => p !== '/').length > 0) {
       const blogName = path[path.length - 1];
       this.setState({blogName}, () => this.onSubmit());
     }
@@ -295,7 +295,9 @@ class App extends Component {
 
     // TODO account for if this page is hosted not at root
     const path = window.location.pathname.split('/');
-    const newPathName = path.splice(0, path.length - 1).join('/') +
+    const containsBlog = path.indexOf('blog') !== -1;
+    const pathModifier = containsBlog ? 2 : 1;
+    const newPathName = path.splice(0, path.length - pathModifier).join('/') + '/blog/' +
                         this.state.blogName.replace(/\.tumblr\.com/, '');
     window.history.pushState(null, '', newPathName);
 
@@ -319,7 +321,7 @@ class App extends Component {
     const progressPercent = (this.state.totalFetchedPosts / this.state.blog.total_posts) * 100.0;
     return (
       <div>
-        <Container>
+        <Container className="section">
           <Header as="h1">
             <a href="/">Tumblr Top</a>
             <Header.Subheader>
@@ -371,6 +373,11 @@ class App extends Component {
                     src={`https://api.tumblr.com/v2/blog/${this.state.blog.name}/avatar/512`} />
                   <Header.Content>
                     { this.state.blog.name }
+                    {
+                      this.state.blog.is_nsfw ? (
+                        <span className="nsfw"> NSFW</span>
+                      ) : null
+                    }
                     <Header.Subheader>
                       { this.state.blog.title }
                     </Header.Subheader>
@@ -391,14 +398,16 @@ class App extends Component {
             }
             {
               this.state.blog.total_posts ? (
-                <div>
+                <div className="details">
                   Read {this.state.totalFetchedPosts } of { this.state.blog.total_posts || 0} posts.
                 </div>
               ): null
             }
             {
               progressPercent < 100 ? (
-                <Progress percent={progressPercent} />
+                <div className="section">
+                  <Progress percent={progressPercent} />
+                </div>
               ) : null
             }
           </Container>

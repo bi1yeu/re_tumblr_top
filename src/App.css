@@ -20,9 +20,18 @@
 }
 
 .inf-scroller {
-  margin-top: 100px;
+  margin-top: 6.25em;
 }
 
 .section {
-  margin-top: 15px;
+  margin-top: 1em;
+}
+
+.details {
+  font-size: smaller;
+}
+
+.nsfw {
+  color: red;
+  font-size: smaller;
 }
