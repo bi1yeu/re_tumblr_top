@@ -92,7 +92,11 @@ const Post = ({ post, windowWidth }) => {
             {
               post.title ? (
                 <Header size="medium">
-                  {post.title}
+                  {
+                    post.url ? (
+                      <a href={post.url}>{post.title}</a>
+                    ) : post.title
+                  }
                 </Header>
               ) : null
             }
@@ -116,6 +120,13 @@ const Post = ({ post, windowWidth }) => {
                   <div dangerouslySetInnerHTML={{ __html: post.text }} />
                   Source: <div dangerouslySetInnerHTML={{ __html: post.source }} />
                 </Card.Description>
+              ) : null
+            }
+            {
+              post.tags && post.tags.length > 0 ? (
+                <Card.Meta>
+                  {post.tags.map((t, i) => <span key={i}>#{t} </span>)}
+                </Card.Meta>
               ) : null
             }
           </Card.Content>
@@ -277,6 +288,7 @@ class App extends Component {
                    totalFetchedPosts: 0,
                    numVisiblePosts: 15,
                    error: ''});
+
     if (this.state.blogName.indexOf('.tumblr.com') === -1) {
       this.setState({blogName: this.state.blogName + '.tumblr.com'});
     }
@@ -287,7 +299,8 @@ class App extends Component {
                         this.state.blogName.replace(/\.tumblr\.com/, '');
     window.history.pushState(null, '', newPathName);
 
-    this.getBlogInfo().then(() => this.getPosts());
+    this.getBlogInfo()
+        .then(() => this.getPosts());
     if (evt) {
       evt.preventDefault();
     }
@@ -306,7 +319,7 @@ class App extends Component {
     const progressPercent = (this.state.totalFetchedPosts / this.state.blog.total_posts) * 100.0;
     return (
       <div>
-        <Container text>
+        <Container>
           <Header as="h1">
             <a href="/">Tumblr Top</a>
             <Header.Subheader>
@@ -348,20 +361,47 @@ class App extends Component {
               </Form>
             </Grid.Column>
           </Grid>
-          <Header as="h2">
-            { this.state.blog.name }
-            <Header.Subheader>
-              { this.state.blog.title }
-            </Header.Subheader>
-          </Header>
-          <div>
-            Read {this.state.totalFetchedPosts } of { this.state.blog.total_posts || 0} posts.
-          </div>
           {
-            progressPercent < 100 ? (
-              <Progress percent={progressPercent} />
+            this.state.blog.name ? (
+              <Container className="section">
+                <Header as="h2">
+                  <Image
+                    circular
+                    avatar
+                    src={`https://api.tumblr.com/v2/blog/${this.state.blog.name}/avatar/512`} />
+                  <Header.Content>
+                    { this.state.blog.name }
+                    <Header.Subheader>
+                      { this.state.blog.title }
+                    </Header.Subheader>
+                  </Header.Content>
+                </Header>
+              </Container>
             ) : null
           }
+          <Container className="section">
+            {
+              window.location.href.indexOf(this.state.blog.name) !== -1 ? (
+                <div>Link to these results: {" "}
+                  <a href={window.location.href}>
+                    {window.location.href}
+                  </a>
+                </div>
+              ) : null
+            }
+            {
+              this.state.blog.total_posts ? (
+                <div>
+                  Read {this.state.totalFetchedPosts } of { this.state.blog.total_posts || 0} posts.
+                </div>
+              ): null
+            }
+            {
+              progressPercent < 100 ? (
+                <Progress percent={progressPercent} />
+              ) : null
+            }
+          </Container>
           <Divider />
           <Grid centered>
             { posts }
