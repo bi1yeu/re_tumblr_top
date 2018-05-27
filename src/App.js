@@ -168,9 +168,9 @@ class App extends Component {
   }
 
   componentDidMount() {
-    const path = window.location.pathname.split('/blog/');
-    if (path.filter(p => p !== '/').length > 0) {
-      const blogName = path[path.length - 1];
+    const pathname = window.location.pathname;
+    if (pathname.indexOf('/blog/') !== -1) {
+      const blogName = pathname.substring(pathname.indexOf("/blog/") + 6);
       this.setState({blogName}, () => this.onSubmit());
     }
     this.updateWindowDimensions();
@@ -357,7 +357,7 @@ class App extends Component {
                     name="blogName"
                     onChange={this.onChange}
                     value={this.state.blogName}
-                    placeholder="Blog name (e.g. 1041uuu)"/>
+                    placeholder="Enter a blog name to view its top content"/>
                 </Form.Field>
                 <Button type="submit" disabled={this.state.blogName === ''}>
                   Get Posts
