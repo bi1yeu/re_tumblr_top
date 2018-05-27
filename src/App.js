@@ -15,7 +15,9 @@ import * as moment from 'moment';
 import fetch from 'fetch-retry';
 import './App.css';
 
-const DATE_INPUT_FORMAT = 'YYYY-MM-DD HH:mm:ss z'
+/* This should be set in `.env` file(s) */
+const API_KEY = process.env.REACT_APP_API_KEY;
+const DATE_INPUT_FORMAT = 'YYYY-MM-DD HH:mm:ss z';
 const DATE_OUTPUT_FORMAT = 'MMM D, YYYY';
 const UPDATE_EVERY_N_POSTS = 100;
 
