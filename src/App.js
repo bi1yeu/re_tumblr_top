@@ -20,7 +20,7 @@ import './App.css';
 const API_KEY = process.env.REACT_APP_API_KEY;
 const DATE_INPUT_FORMAT = 'YYYY-MM-DD HH:mm:ss z';
 const DATE_OUTPUT_FORMAT = 'MMM D, YYYY';
-const UPDATE_EVERY_N_POSTS = 100;
+const UPDATE_EVERY_N_POSTS = 40;
 
 const range = (to, step) =>
   Array.from(new Array(to), (x,i) => i)
@@ -160,6 +160,7 @@ class App extends Component {
       loadingPosts: false,
       windowWidth: window.innerWidth,
       windowHeight: window.innerHeight,
+      stopFetchingPosts: false,
     };
     this.onChange = this.onChange.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
@@ -189,6 +190,7 @@ class App extends Component {
     return this.state.totalFetchedPosts <= 40 ||
            this.state.totalFetchedPosts === nextState.totalFetchedPosts ||
            nextState.totalFetchedPosts % UPDATE_EVERY_N_POSTS === 0 ||
+           nextState.stopFetchingPosts !== this.state.stopFetchingPosts ||
            nextState.totalFetchedPosts >= this.state.blog.total_posts;
   }
 
@@ -203,12 +205,38 @@ class App extends Component {
     }
   }
 
-  getPosts() {
+  fetchPosts(url) {
+    const request = fetch(url)
+         .then(handleResponse)
+         .then(({ response }) => {
+           const fetchedPosts = response.posts;
+           const filteredPosts = this.state.posts.concat(fetchedPosts);
+           this.setState({posts: filteredPosts,
+                          totalFetchedPosts: this.state.totalFetchedPosts + fetchedPosts.length});
+         })
+         .catch(e => this.setState({error: e.message}))
+    return request;
+  }
+
+  /* The Tumblr API seems to slow down when using max number of simultaneous
+  requests, even w/ a token that has the rate limit removed. This approach is
+  slower but less prone to 429s */
+  fetchPostsSerially(urls) {
+    if (urls.length > 0 && !this.state.stopFetchingPosts) {
+      const firstUrl = urls[0];
+      this.fetchPosts(firstUrl)
+          .then(() => this.fetchPostsSerially(urls.slice(1)));
+    } else {
+      this.setState({loadingPosts: false})
+    }
+  }
+
+  loadBlogPosts() {
     const stepSize = 20;
 
     this.setState({loadingPosts: true});
 
-    const postRequests = range(this.state.blog.total_posts, stepSize)
+    const postFetchUrls = range(this.state.blog.total_posts, stepSize)
       .map((offset) => {
         const url = new URL(`https://api.tumblr.com/v2/blog/${this.state.blogName}/posts`);
         const params = {api_key: API_KEY,
@@ -217,21 +245,9 @@ class App extends Component {
                         offset};
         url.search = new URLSearchParams(params);
         return url;
-      })
-      .map((url) => {
-        const request = fetch(url)
-          .then(handleResponse)
-          .then(({ response }) => {
-            const fetchedPosts = response.posts;
-            const filteredPosts = this.state.posts.concat(fetchedPosts);
-            this.setState({posts: filteredPosts,
-                           totalFetchedPosts: this.state.totalFetchedPosts + fetchedPosts.length});
-          })
-          .catch(e => this.setState({error: e.message}))
-        return request;
       });
 
-    Promise.all(postRequests).then(() => this.setState({loadingPosts: false}));
+    this.fetchPostsSerially(postFetchUrls);
   }
 
   getBlogInfo() {
@@ -290,7 +306,9 @@ class App extends Component {
                    loadingPosts: false,
                    totalFetchedPosts: 0,
                    numVisiblePosts: 15,
-                   error: ''});
+                   error: '',
+                   stopFetchingPosts: false,
+    });
 
     if (this.state.blogName.indexOf('.tumblr.com') === -1) {
       this.setState({blogName: this.state.blogName + '.tumblr.com'});
@@ -305,7 +323,7 @@ class App extends Component {
     window.history.pushState(null, '', newPathName);
 
     this.getBlogInfo()
-        .then(() => this.getPosts());
+        .then(() => this.loadBlogPosts());
     if (evt) {
       evt.preventDefault();
     }
@@ -349,13 +367,13 @@ class App extends Component {
           <Grid>
             <Grid.Column width={gridColWidth(this.state.windowWidth)}>
               <Form
-                onSubmit={this.onSubmit}
-                loading={this.state.loadingPosts}>
+                onSubmit={this.onSubmit}>
                 <Form.Field>
                   <label>Blog Name</label>
                   <Input
                     type="text"
                     name="blogName"
+                    loading={this.state.loadingPosts}
                     onChange={this.onChange}
                     value={this.state.blogName}
                     placeholder="Enter a blog name to view its top content"/>
@@ -363,6 +381,15 @@ class App extends Component {
                 <Button type="submit" disabled={this.state.blogName === ''}>
                   Get Posts
                 </Button>
+                {
+                  this.state.loadingPosts ? (
+                    <Button
+                      type="button"
+                      onClick={() => this.setState({stopFetchingPosts: true})}>
+                      Stop
+                    </Button>
+                  ) : null
+                }
               </Form>
             </Grid.Column>
           </Grid>
