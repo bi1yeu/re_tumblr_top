@@ -10,6 +10,7 @@ import { Button,
          Input,
          Message,
          Progress,
+         Segment,
          Visibility} from 'semantic-ui-react';
 import * as moment from 'moment';
 import fetch from 'fetch-retry';
@@ -325,7 +326,7 @@ class App extends Component {
       <div>
         <Container className="section">
           <Header as="h1">
-            <a href=`${process.env.PUBLIC_URL}/`>Tumblr Top</a>
+            <a href={`${process.env.PUBLIC_URL}/`}>Tumblr Top</a>
             <Header.Subheader>
               View a Tumblr Blog's best original posts
             </Header.Subheader>
