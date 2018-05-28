@@ -34,16 +34,10 @@ npm start
 
 ### Deployment
 
-Ensure the homepage is set in `package.json`. Also ensure the env vars are set (see Env vars section above).
+Ensure `PUBLIC_URL` env var set for prod build. The command below puts static deployment assets in the `.build/` directory.
 
 ```
-...
-"homepage": "https://matthewbilyeu.com/tumblr-top",
-...
-```
-
-```
-npm run build
+PUBLIC_URL=https://matthewbilyeu.com/tt2 npm run build
 ```
 
 ---
