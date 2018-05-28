@@ -1,3 +1,53 @@
+## Building / running
+
+Requires nodejs and npm.
+
+```
+$ node -v
+v8.11.2
+$ npm -v
+6.1.0
+```
+
+### Installation
+
+```
+npm install
+```
+
+### Env vars
+
+Copy the placeholder environment vars and populate the new files with real Tumblr API keys.
+
+```
+cp .env.development{,.local}
+cp .env.production{,.local}
+```
+
+### Development
+
+This command starts the development server and the hot-reloading features that are part of the `create-react-app` scaffolding on which this project is built.
+
+```
+npm start
+```
+
+### Deployment
+
+Ensure the homepage is set in `package.json`. Also ensure the env vars are set (see Env vars section above).
+
+```
+...
+"homepage": "https://matthewbilyeu.com/tumblr-top",
+...
+```
+
+```
+npm run build
+```
+
+---
+
 This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
 
 Below you will find some information on how to perform common tasks.<br>

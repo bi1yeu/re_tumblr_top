@@ -325,7 +325,7 @@ class App extends Component {
       <div>
         <Container className="section">
           <Header as="h1">
-            <a href="/">Tumblr Top</a>
+            <a href=`${process.env.PUBLIC_URL}/`>Tumblr Top</a>
             <Header.Subheader>
               View a Tumblr Blog's best original posts
             </Header.Subheader>
