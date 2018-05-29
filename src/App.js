@@ -20,7 +20,6 @@ import './App.css';
 const API_KEY = process.env.REACT_APP_API_KEY;
 const DATE_INPUT_FORMAT = 'YYYY-MM-DD HH:mm:ss z';
 const DATE_OUTPUT_FORMAT = 'MMM D, YYYY';
-const UPDATE_EVERY_N_POSTS = 40;
 /* Some old posts lack reblog information so this is used as part of the
 heuristic to determine whether or not a post is original. */
 const OLD_POST_CUTOFF = moment('2011-01-01T00:00:00Z');
@@ -184,17 +183,6 @@ class App extends Component {
 
   componentWillUnmount() {
     window.removeEventListener('resize', this.updateWindowDimensions);
-  }
-
-  shouldComponentUpdate(nextProps, nextState) {
-    /* Can only fetch 20 posts at a time, don't want to sort, filter, and
-       rerender after every fetch */
-
-    return this.state.totalFetchedPosts <= 40 ||
-           this.state.totalFetchedPosts === nextState.totalFetchedPosts ||
-           nextState.totalFetchedPosts % UPDATE_EVERY_N_POSTS === 0 ||
-           nextState.stopFetchingPosts !== this.state.stopFetchingPosts ||
-           nextState.totalFetchedPosts >= this.state.blog.total_posts;
   }
 
   // via https://stackoverflow.com/a/42141641
