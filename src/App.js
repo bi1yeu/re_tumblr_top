@@ -21,6 +21,9 @@ const API_KEY = process.env.REACT_APP_API_KEY;
 const DATE_INPUT_FORMAT = 'YYYY-MM-DD HH:mm:ss z';
 const DATE_OUTPUT_FORMAT = 'MMM D, YYYY';
 const UPDATE_EVERY_N_POSTS = 40;
+/* Some old posts lack reblog information so this is used as part of the
+heuristic to determine whether or not a post is original. */
+const OLD_POST_CUTOFF = moment('2011-01-01T00:00:00Z');
 
 const range = (to, step) =>
   Array.from(new Array(to), (x,i) => i)
@@ -287,7 +290,8 @@ class App extends Component {
     }
 
     /* Some really old posts have the reblog path under a `comment` key */
-    if (post.reblog &&
+    if (moment(post.date, DATE_INPUT_FORMAT).isBefore(OLD_POST_CUTOFF) &&
+        post.reblog &&
         post.reblog.comment &&
         post.reblog.comment.indexOf('.tumblr.com/') !== -1) {
       return false;
