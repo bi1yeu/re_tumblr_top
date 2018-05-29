@@ -449,9 +449,11 @@ class App extends Component {
         </Container>
         {
           this.state.posts.filter(this.postIsOriginal).length > 0 ? (
-            <Visibility className="inf-scroller" onUpdate={this.handleInfScrollingUpdate}>
-              No more posts
-            </Visibility>
+            <Container>
+              <Visibility className="inf-scroller" onUpdate={this.handleInfScrollingUpdate}>
+                { this.state.loadingPosts ? 'Loading...' : 'No more posts' }
+              </Visibility>
+            </Container>
           ) : null
         }
       </div>
