@@ -120,6 +120,15 @@ const Post = ({ post, windowWidth }) => {
               ) : null
             }
             {
+              post.type === 'answer' ? (
+                <Card.Description>
+                  <div><strong>{post.asking_name}:</strong> <i>{post.question}</i></div>
+                  <Divider />
+                  <div dangerouslySetInnerHTML={{ __html: post.answer }} />
+                </Card.Description>
+              ) : null
+            }
+            {
               post.type === 'quote' ? (
                 <Card.Description>
                   <div dangerouslySetInnerHTML={{ __html: post.text }} />
@@ -129,7 +138,7 @@ const Post = ({ post, windowWidth }) => {
             }
             {
               post.tags && post.tags.length > 0 ? (
-                <Card.Meta>
+                <Card.Meta className="section">
                   {post.tags.map((t, i) => <span key={i}>#{t} </span>)}
                 </Card.Meta>
               ) : null
