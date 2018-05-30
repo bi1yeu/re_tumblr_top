@@ -333,7 +333,7 @@ class App extends Component {
   render() {
     const posts = this.state.posts
                       .filter(this.postIsOriginal)
-                      .sort((a, b) => a.note_count < b.note_count)
+                      .sort((a, b) => b.note_count - a.note_count)
                       .slice(0, this.state.numVisiblePosts)
                       .map(p => <Post
                                   key={p.id}
