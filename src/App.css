@@ -15,6 +15,10 @@
   color: rgba(0,0,0,.87);
 }
 
+.ui.card {
+  height: 23em; /* needed for Chrome */
+}
+
 .pull-right {
   float: right;
 }
