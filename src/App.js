@@ -315,7 +315,8 @@ class App extends Component {
       this.setState({blogName: this.state.blogName + '.tumblr.com'});
     }
 
-    // TODO account for if this page is hosted not at root
+    this.setState({blogName: this.state.blogName.toLowerCase()});
+
     const path = window.location.pathname.split('/');
     const containsBlog = path.indexOf('blog') !== -1;
     const pathModifier = containsBlog ? 2 : 1;
