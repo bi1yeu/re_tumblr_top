@@ -4,12 +4,12 @@
   "private": true,
   "dependencies": {
     "fetch-retry": "^1.2.1",
-    "moment": "^2.22.1",
-    "react": "^16.3.2",
-    "react-dom": "^16.3.2",
+    "moment": "^2.22.2",
+    "react": "^16.4.0",
+    "react-dom": "^16.4.0",
     "react-scripts": "1.1.4",
     "semantic-ui-css": "^2.3.1",
-    "semantic-ui-react": "^0.80.0",
+    "semantic-ui-react": "^0.80.2",
     "victory": "^0.26.1"
   },
   "scripts": {
