@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import { Button,
-         Card,
          Container,
          Divider,
          Form,
@@ -11,18 +10,21 @@ import { Button,
          Message,
          Progress,
          Segment,
+         Tab,
          Visibility} from 'semantic-ui-react';
-import * as moment from 'moment';
 import fetch from 'fetch-retry';
+
+import {
+  gridColWidth,
+  postIsOriginal,
+} from './utils';
+
+import AnalysisPage from './AnalysisPage';
+import Post from './Post';
 import './App.css';
 
 /* This should be set in `.env` file(s) */
 const API_KEY = process.env.REACT_APP_API_KEY;
-const DATE_INPUT_FORMAT = 'YYYY-MM-DD HH:mm:ss z';
-const DATE_OUTPUT_FORMAT = 'MMM D, YYYY';
-/* Some old posts lack reblog information so this is used as part of the
-heuristic to determine whether or not a post is original. */
-const OLD_POST_CUTOFF = moment('2011-01-01T00:00:00Z');
 
 const range = (to, step) =>
   Array.from(new Array(to), (x,i) => i)
@@ -44,120 +46,6 @@ const handleResponse = (response) => {
   }
 };
 
-/* Used to dynamically resize the columns depending on window width */
-const gridColWidth = (windowWidth) => {
-  if (windowWidth > 1100) {
-    return 5;
-  }
-  if (windowWidth > 600) {
-    return 8;
-  }
-  return 15;
-};
-
-const Post = ({ post, windowWidth }) => {
-  /* For audio/video posts, the player/player.embed_code property is HTML for an
-   * iframe with fixed sizes. This is janky, but it looks better than the canned
-   * width. */
-  let embedContent = null;
-  if (post.player) {
-    if (post.player instanceof Array &&
-        (typeof post.player[1].embed_code === 'string' ||
-         post.player[1].embed_code instanceof String)) {
-      embedContent = post.player[1].embed_code.replace(/width="\d+"/, "width=\"100%\"");
-    } else if (typeof post.player === 'string' || post.play instanceof String) {
-      embedContent = post.player.replace(/width="\d+"/, "width=\"100%\"").replace(/height="\d+"/, "height=\"30%\"");
-    }
-  }
-
-  return(
-    <Grid.Column width={gridColWidth(windowWidth)}>
-      <Card
-        fluid
-        href={post.post_url}
-        target="_blank"
-      >
-        <div className="card-contents">
-          {
-            post.type === 'photo' ? (
-              <div className="cardImage">
-                <Image alt={post.photos[0].caption || ""}
-                  src={post.photos[0].alt_sizes[1].url} />
-              </div>
-            ) : null
-          }
-          {
-            embedContent !== null ? (
-              <div className="cardImage">
-                <div dangerouslySetInnerHTML={{ __html: embedContent }} />
-              </div>
-            ) : null
-          }
-          <Card.Content className="card-written-contents">
-            {
-              post.title ? (
-                <Header size="medium">
-                  {
-                    post.url ? (
-                      <a href={post.url}>{post.title}</a>
-                    ) : post.title
-                  }
-                </Header>
-              ) : null
-            }
-            {
-              post.caption ? (
-                <Card.Description>
-                  <div dangerouslySetInnerHTML={{ __html: post.caption }} />
-                </Card.Description>
-              ) : null
-            }
-            {
-              post.body ? (
-                <Card.Description>
-                  <div dangerouslySetInnerHTML={{ __html: post.body }} />
-                </Card.Description>
-              ) : null
-            }
-            {
-              post.type === 'answer' ? (
-                <Card.Description>
-                  <div><strong>{post.asking_name}:</strong> <i>{post.question}</i></div>
-                  <Divider />
-                  <div dangerouslySetInnerHTML={{ __html: post.answer }} />
-                </Card.Description>
-              ) : null
-            }
-            {
-              post.type === 'quote' ? (
-                <Card.Description>
-                  <div dangerouslySetInnerHTML={{ __html: post.text }} />
-                  Source: <div dangerouslySetInnerHTML={{ __html: post.source }} />
-                </Card.Description>
-              ) : null
-            }
-            {
-              post.tags && post.tags.length > 0 ? (
-                <Card.Meta className="section">
-                  {post.tags.map((t, i) => <span key={i}>#{t} </span>)}
-                </Card.Meta>
-              ) : null
-            }
-          </Card.Content>
-        </div>
-        <Card.Content extra>
-          <span>
-            {post.note_count.toLocaleString()} notes
-          </span>
-          <span className="pull-right">
-            {moment(post.date, DATE_INPUT_FORMAT).format(DATE_OUTPUT_FORMAT)}
-          </span>
-        </Card.Content>
-      </Card>
-    </Grid.Column>
-  );
-};
-
 class App extends Component {
   constructor(props) {
     super(props);
@@ -175,7 +63,6 @@ class App extends Component {
     };
     this.onChange = this.onChange.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
-    this.postIsOriginal = this.postIsOriginal.bind(this);
     this.handleInfScrollingUpdate = this.handleInfScrollingUpdate.bind(this);
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
   }
@@ -218,7 +105,7 @@ class App extends Component {
     return request;
   }
 
-  /* The Tumblr API seems to slow down when using max number of simultaneous
+  /* The Tumblr API seems to throttle when using max number of simultaneous
   requests, even w/ a token that has the rate limit removed. This approach is
   slower but less prone to 429s */
   fetchPostsSerially(urls) {
@@ -263,40 +150,6 @@ class App extends Component {
     .catch(e => this.setState({error: e.message}))
   }
 
-  postIsOriginal(post) {
-    if (post === undefined) {
-      return false;
-    }
-
-    if (post.reblogged_from_id) {
-      return false;
-    }
-
-    /* Some posts with deleted source blogs don't have a reblogged_from_id; this
-       is an attempt to still differentiate those reblogs */
-    if (post.trail &&
-        post.trail.length > 0 &&
-        post.trail[0] &&
-        post.trail[0].blog.name !== this.state.blogName.replace(/\.tumblr\.com/, '')) {
-      return false;
-    }
-
-    /* Others have a reblog tree with links */
-    if (post.reblog && post.reblog.tree_html.indexOf('.tumblr.com/') !== -1) {
-      return false;
-    }
-
-    /* Some really old posts have the reblog path under a `comment` key */
-    if (moment(post.date, DATE_INPUT_FORMAT).isBefore(OLD_POST_CUTOFF) &&
-        post.reblog &&
-        post.reblog.comment &&
-        post.reblog.comment.indexOf('.tumblr.com/') !== -1) {
-      return false;
-    }
-
-    return true;
-  }
-
   onChange(evt) {
     this.setState({[evt.target.name]: evt.target.value})
   }
@@ -311,44 +164,81 @@ class App extends Component {
                    stopFetchingPosts: false,
     });
 
-    if (this.state.blogName.indexOf('.tumblr.com') === -1) {
+    if (this.state.blogName.indexOf('.') === -1) {
       this.setState({blogName: this.state.blogName + '.tumblr.com'});
     }
 
-    this.setState({blogName: this.state.blogName.toLowerCase()});
+    const blogName = this.state.blogName.replace(/\//g, '')
+                                        .replace(/^http[s]?/g, '')
+                                        .replace(/:/g, '')
+                                        .toLowerCase();
 
-    const path = window.location.pathname.split('/');
-    const containsBlog = path.indexOf('blog') !== -1;
-    const pathModifier = containsBlog ? 2 : 1;
-    const newPathName = path.splice(0, path.length - pathModifier).join('/') + '/blog/' +
-                        this.state.blogName.replace(/\.tumblr\.com/, '');
-    window.history.pushState(null, '', newPathName);
+    this.setState({blogName: blogName}, () => {
+      const path = window.location.pathname.split('/');
+      const containsBlog = path.indexOf('blog') !== -1;
+      const pathModifier = containsBlog ? 2 : 1;
+      const newPathName = path.splice(0, path.length - pathModifier).join('/') + '/blog/' +
+                          this.state.blogName.replace(/\.tumblr\.com/, '');
+      window.history.pushState(null, '', newPathName);
 
-    this.getBlogInfo()
-        .then(() => this.loadBlogPosts());
+      this.getBlogInfo()
+          .then(() => this.loadBlogPosts());
+    });
+
     if (evt) {
       evt.preventDefault();
     }
   }
 
-  render() {
-    const posts = this.state.posts
-                      .filter(this.postIsOriginal)
-                      .sort((a, b) => b.note_count - a.note_count)
-                      .slice(0, this.state.numVisiblePosts)
-                      .map(p => <Post
-                                  key={p.id}
-                                  post={p}
-                                  windowWidth={this.state.windowWidth}
-                                  windowHeight={this.state.windowHeight}/>);
-    const progressPercent = (this.state.totalFetchedPosts / this.state.blog.total_posts) * 100.0;
+  renderPostsTab(originalPosts) {
+    const posts = originalPosts.sort((a, b) => b.note_count - a.note_count)
+                               .slice(0, this.state.numVisiblePosts)
+                               .map(p => <Post
+                                           key={p.id}
+                                           post={p}
+                                           windowWidth={this.state.windowWidth}
+                                           windowHeight={this.state.windowHeight}/>);
     return (
       <div>
-        <Container className="section">
+        <Grid centered>
+          { posts }
+        </Grid>
+        {
+          originalPosts.length > 0 ? (
+            <Visibility className="inf-scroller" onUpdate={this.handleInfScrollingUpdate}>
+              { this.state.loadingPosts ? 'Loading...' : 'No more posts' }
+            </Visibility>
+          ) : null
+        }
+      </div>
+    );
+  }
+
+  render() {
+    const progressPercent = (this.state.totalFetchedPosts / this.state.blog.total_posts) * 100.0;
+
+    const originalPosts = this.state.posts.filter(postIsOriginal.bind(null, this.state.blogName));
+
+    const panes = [
+      { menuItem: 'Top posts', render: () => this.renderPostsTab(originalPosts) },
+      { menuItem: 'Analysis', render: () => {
+          return (
+            <AnalysisPage
+              blog={this.state.blog}
+              posts={this.state.posts}
+              originalPosts={originalPosts}/>
+          );
+        }
+      }
+    ]
+
+    return (
+      <div>
+        <Container className="tt-section">
           <Header as="h1">
             <a href={`${process.env.PUBLIC_URL}/`}>Tumblr Top</a>
             <Header.Subheader>
-              View a Tumblr Blog's best original posts
+              View a Tumblr Blog's most popular original posts
             </Header.Subheader>
           </Header>
         </Container>
@@ -380,34 +270,37 @@ class App extends Component {
                     value={this.state.blogName}
                     placeholder="Enter a blog name to view its top content"/>
                 </Form.Field>
-                <Button type="submit" disabled={this.state.blogName === ''}>
-                  Get Posts
-                </Button>
                 {
                   this.state.loadingPosts ? (
                     <Button
                       type="button"
                       onClick={() => this.setState({stopFetchingPosts: true})}>
-                      Stop
+                      Stop Loading
                     </Button>
-                  ) : null
+                  ) : (
+                    <Button type="submit" disabled={this.state.blogName === ''}>
+                      Get Posts
+                    </Button>
+                  )
                 }
               </Form>
             </Grid.Column>
           </Grid>
           {
             this.state.blog.name ? (
-              <Container className="section">
+              <Container className="tt-section">
                 <Header as="h2">
                   <Image
                     circular
                     avatar
                     src={`https://api.tumblr.com/v2/blog/${this.state.blog.name}/avatar/512`} />
                   <Header.Content>
-                    { this.state.blog.name }
+                    <a href={this.state.blog.url} target="_blank">
+                      { this.state.blog.name }
+                    </a>
                     {
                       this.state.blog.is_nsfw ? (
-                        <span className="nsfw"> NSFW</span>
+                        <span className="tt-nsfw"> NSFW</span>
                       ) : null
                     }
                     <Header.Subheader>
@@ -418,7 +311,7 @@ class App extends Component {
               </Container>
             ) : null
           }
-          <Container className="section">
+          <Container className="tt-section">
             {
               window.location.href.indexOf(this.state.blog.name) !== -1 ? (
                 <div>Link to these results: {" "}
@@ -430,33 +323,25 @@ class App extends Component {
             }
             {
               this.state.blog.total_posts ? (
-                <div className="details">
-                  Read {this.state.totalFetchedPosts } of { this.state.blog.total_posts || 0} posts.
+                <div className="tt-details">
+                  Read {this.state.totalFetchedPosts } of { this.state.blog.total_posts || 0} posts
                 </div>
               ): null
             }
             {
               progressPercent < 100 ? (
-                <div className="section">
+                <div className="tt-section">
                   <Progress percent={progressPercent} />
                 </div>
               ) : null
             }
           </Container>
-          <Divider />
-          <Grid centered>
-            { posts }
-          </Grid>
+          {
+            this.state.blog.name ? (
+              <Tab menu={{ secondary: true, pointing: true }} panes={panes} />
+            ) : null
+          }
         </Container>
-        {
-          this.state.posts.filter(this.postIsOriginal).length > 0 ? (
-            <Container>
-              <Visibility className="inf-scroller" onUpdate={this.handleInfScrollingUpdate}>
-                { this.state.loadingPosts ? 'Loading...' : 'No more posts' }
-              </Visibility>
-            </Container>
-          ) : null
-        }
       </div>
     );
   }

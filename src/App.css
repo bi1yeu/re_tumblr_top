@@ -1,14 +1,13 @@
-.ui.card > .card-contents > .cardImage {
-  /* height: 77%; */
+.ui.card > .tt-card-contents > .tt-card-image {
   overflow: hidden;
 }
 
-.ui.card > .card-contents > .card-written-contents {
+.ui.card > .tt-card-contents > .tt-card-written-contents {
   max-height: 100%;
   padding: 0.75em 1em;
 }
 
-.ui.card > .card-contents {
+.ui.card > .tt-card-contents {
   max-height: 100%;
   height: 23em;
   overflow: scroll;
@@ -19,23 +18,45 @@
   height: 23em; /* needed for Chrome */
 }
 
-.pull-right {
+.tt-pull-right {
   float: right;
 }
 
-.inf-scroller {
+.tt-inf-scroller {
   margin-top: 6.25em;
 }
 
-.section {
+.tt-section {
+  padding-top: 1em;
+}
+
+.tt-tag-list {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tt-details {
+  font-size: smaller;
+}
+
+.tt-nsfw {
+  color: red;
+  font-size: smaller;
+}
+
+.tt-chart-container {
   margin-top: 1em;
 }
 
-.details {
-  font-size: smaller;
+.tt-chart-container .tt-chart {
+  margin: 0 auto;
 }
 
-.nsfw {
-  color: red;
-  font-size: smaller;
+.tt-chart-container .tt-chart.tt-pie {
+  width: 44%;
+}
+
+.tt-statistics {
+  justify-content: center;
 }

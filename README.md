@@ -17,7 +17,7 @@ npm install
 
 ### Env vars
 
-Copy the placeholder environment vars and populate the new files with real Tumblr API keys.
+Copy the placeholder environment vars and populate the new files with real [Tumblr API OAuth consumer keys](https://www.tumblr.com/oauth/apps).
 
 ```
 cp .env.development{,.local}
@@ -39,6 +39,15 @@ Ensure `PUBLIC_URL` env var set for prod build. The command below puts static de
 ```
 PUBLIC_URL=https://matthewbilyeu.com/tt2 npm run build
 ```
+
+### Future
+
+- display blog list as user types into blog name input
+- option to show reblogged posts as well
+- other sorting and filtering options
+- 'back to top' button
+- About page
+- use localstorage to store posts
 
 ---
 
