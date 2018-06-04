@@ -13,6 +13,7 @@ import { Button,
          Tab,
          Visibility} from 'semantic-ui-react';
 import fetch from 'fetch-retry';
+import ReactGA from 'react-ga';
 
 import {
   gridColWidth,
@@ -23,8 +24,9 @@ import AnalysisPage from './AnalysisPage';
 import Post from './Post';
 import './App.css';
 
-/* This should be set in `.env` file(s) */
+/* These should be set in `.env` file(s) */
 const API_KEY = process.env.REACT_APP_API_KEY;
+const GA_TRACKING_ID = process.env.REACT_APP_GA_TRACKING_ID;
 
 const range = (to, step) =>
   Array.from(new Array(to), (x,i) => i)
@@ -75,6 +77,10 @@ class App extends Component {
     }
     this.updateWindowDimensions();
     window.addEventListener('resize', this.updateWindowDimensions);
+
+    if (GA_TRACKING_ID) {
+      ReactGA.initialize(GA_TRACKING_ID);
+    }
   }
 
   componentWillUnmount() {
@@ -184,6 +190,10 @@ class App extends Component {
       this.getBlogInfo()
           .then(() => this.loadBlogPosts());
     });
+
+    if (GA_TRACKING_ID) {
+      ReactGA.pageview(window.location.pathname + window.location.search);
+    }
 
     if (evt) {
       evt.preventDefault();
