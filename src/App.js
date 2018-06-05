@@ -27,6 +27,7 @@ import './App.css';
 /* These should be set in `.env` file(s) */
 const API_KEY = process.env.REACT_APP_API_KEY;
 const GA_TRACKING_ID = process.env.REACT_APP_GA_TRACKING_ID;
+const DEMO_BLOG_NAME = 'hellowindowcat';
 
 const range = (to, step) =>
   Array.from(new Array(to), (x,i) => i)
@@ -65,6 +66,7 @@ class App extends Component {
     };
     this.onChange = this.onChange.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
+    this.loadDemoBlog = this.loadDemoBlog.bind(this);
     this.handleInfScrollingUpdate = this.handleInfScrollingUpdate.bind(this);
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
   }
@@ -224,6 +226,10 @@ class App extends Component {
     );
   }
 
+  loadDemoBlog() {
+    this.setState({blogName: DEMO_BLOG_NAME}, () => this.onSubmit());
+  }
+
   render() {
     const progressPercent = (this.state.totalFetchedPosts / this.state.blog.total_posts) * 100.0;
 
@@ -293,6 +299,14 @@ class App extends Component {
                     </Button>
                   )
                 }
+                { !this.state.loadingPosts && this.state.blogName === '' ? (
+                    <div className="tt-section">
+                      ...or try {' '}
+                      <a href="javascript:void(0)" onClick={this.loadDemoBlog}>
+                        {DEMO_BLOG_NAME}
+                      </a>
+                    </div>
+                ) : null}
               </Form>
             </Grid.Column>
           </Grid>

@@ -37,7 +37,7 @@ npm start
 Ensure `PUBLIC_URL` env var set for prod build. The command below puts static deployment assets in the `.build/` directory.
 
 ```
-PUBLIC_URL=https://matthewbilyeu.com/tt2 npm run build
+PUBLIC_URL=https://matthewbilyeu.com/tumblr-top npm run build
 ```
 
 ### Future
