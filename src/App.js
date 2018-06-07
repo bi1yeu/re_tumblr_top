@@ -9,7 +9,6 @@ import { Button,
          Input,
          Message,
          Progress,
-         Segment,
          Tab,
          Visibility} from 'semantic-ui-react';
 import fetch from 'fetch-retry';
