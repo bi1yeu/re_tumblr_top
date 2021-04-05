@@ -16,7 +16,18 @@ import {
 
 import './App.css';
 
-const Post = ({ post, windowWidth }) => {
+/* For NSFW posts, the raw post url will redirect to a "This Tumblr may contain
+   sensitive media" page, even when the user is logged in. This function
+   modifies the URL to one that is accessible for logged-in users. */
+const convertNsfwPostUrl = (post, nsfw) => {
+  if (!nsfw) {
+    return post.post_url;
+  }
+  const [_, subdomain, post_id] = post.post_url.match(/https:\/\/(.*)\.tumblr\.com\/post\/(.*)/);
+  return `https://www.tumblr.com/blog/view/${subdomain}/${post_id}`;
+}
+
+const Post = ({ post, windowWidth, nsfw }) => {
   /* For audio/video posts, the player/player.embed_code property is HTML for an
    * iframe with fixed sizes. This is janky, but it looks better than the canned
    * width. */
@@ -35,7 +46,7 @@ const Post = ({ post, windowWidth }) => {
     <Grid.Column width={gridColWidth(windowWidth)}>
       <Card
         fluid
-        href={post.post_url}
+        href={convertNsfwPostUrl(post, nsfw)}
         target="_blank"
       >
         <div className="tt-card-contents">

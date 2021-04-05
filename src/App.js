@@ -207,6 +207,7 @@ class App extends Component {
                                .map(p => <Post
                                            key={p.id}
                                            post={p}
+                                           nsfw={this.state.blog.is_nsfw}
                                            windowWidth={this.state.windowWidth}
                                            windowHeight={this.state.windowHeight}/>);
     return (
