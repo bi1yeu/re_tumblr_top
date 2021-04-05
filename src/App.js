@@ -11,7 +11,6 @@ import { Button,
          Progress,
          Tab,
          Visibility} from 'semantic-ui-react';
-import fetch from 'fetch-retry';
 import ReactGA from 'react-ga';
 
 import {
@@ -302,7 +301,7 @@ class App extends Component {
                 { !this.state.loadingPosts && this.state.blogName === '' ? (
                     <div className="tt-section">
                       ...or try {' '}
-                      <a href="javascript:void(0)" onClick={this.loadDemoBlog}>
+                      <a href="#!" onClick={this.loadDemoBlog}>
                         {DEMO_BLOG_NAME}
                       </a>
                     </div>

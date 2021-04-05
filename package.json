@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "fetch-retry": "^1.2.1",
+    "fetch-retry": "^4.1.1",
     "moment": "^2.22.2",
     "react": "^16.4.0",
     "react-dom": "^16.4.0",
     "react-ga": "^2.5.3",
-    "react-scripts": "1.1.4",
+    "react-scripts": "^4.0.3",
     "semantic-ui-css": "^2.3.1",
-    "semantic-ui-react": "^0.80.2",
+    "semantic-ui-react": "^2.0.3",
     "victory": "^0.26.1"
   },
   "scripts": {
@@ -18,5 +18,17 @@
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
