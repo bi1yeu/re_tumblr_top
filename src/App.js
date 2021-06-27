@@ -299,12 +299,22 @@ class App extends Component {
                   )
                 }
                 { !this.state.loadingPosts && this.state.blogName === '' ? (
-                    <div className="tt-section">
+                  <>
+                  <div className="tt-section">
                       ...or try {' '}
                       <a href="#!" onClick={this.loadDemoBlog}>
                         {DEMO_BLOG_NAME}
                       </a>
                     </div>
+                    <div className="tt-section">
+                      <p>
+                        <b>Pro tip</b>: You can use a bookmarklet to quickly see a blog's Tumblr Top page while browsing.
+                      </p>
+                      <p>
+                        Drag this link to your bookmarks bar --> <a href='javascript:var via_tumblr = !!window.location.href.match(/\/blog\/view\//);var blog_name = via_tumblr ? window.location.href.split("/").slice(-1)[0] : window.location.host.split(".")[0]; var url = `https://tinyurl.com/6nwamtwy/blog/${blog_name}`; window.open(url, "_blank").focus();'>Tumblr Top</a>. Then, when you're viewing a Tumblr, click the bookmarklet to be taken straight to its Tumblr Top page.
+                        </p>
+                  </div>
+                    </>
                 ) : null}
               </Form>
             </Grid.Column>
