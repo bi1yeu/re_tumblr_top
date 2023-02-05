@@ -18,6 +18,10 @@
   height: 23em; /* needed for Chrome */
 }
 
+.ui.image {
+  width: 100%;
+}
+
 .tt-pull-right {
   float: right;
 }

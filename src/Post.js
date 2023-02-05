@@ -29,11 +29,11 @@ const convertNsfwPostUrl = (post, nsfw) => {
 
 const Post = ({ post, windowWidth, nsfw }) => {
 
-  // get the element in the content.media array with the height closest to 300
+  // get the element in the content.media array with the width closest to 350
   const mediaUrl = (content) => {
     const media = content.media;
     const closest = media.reduce((prev, curr) => {
-      return (Math.abs(curr.height - 300) < Math.abs(prev.height - 300) ? curr : prev);
+      return (Math.abs(curr.width - 350) < Math.abs(prev.width - 350) ? curr : prev);
     });
     return closest.url;
   }
