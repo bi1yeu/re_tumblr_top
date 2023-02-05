@@ -141,59 +141,6 @@ const TagNotesChart = ({posts}) => {
   );
 };
 
-const reduceTypeNotes = (posts) =>  {
-  return posts.reduce((acc, post) => {
-    const noteCount = post.note_count;
-    const postType = post.type;
-    const newVal = acc[postType] ? acc[postType] + noteCount : noteCount;
-    acc[postType] = newVal;
-    return acc;
-  }, {});
-}
-
-const TypeNotesChart = ({posts}) => {
-  const notesByType = reduceTypeNotes(posts);
-  const typeNotes = Object.keys(notesByType)
-                          .map(k => {return {type: k, noteCount: notesByType[k]}})
-                          .sort((a, b) => b.noteCount - a.noteCount);
-
-  if (typeNotes.length < 2) {
-    return <div />;
-  }
-
-  return(
-    <ChartWrapper
-      title="Notes by Post Type"
-      paddingBottom={60}>
-      <VictoryBar
-        labels={(d) => `${d.y.toLocaleString()} notes`}
-        labelComponent={<VictoryTooltip
-                          flyoutStyle={{fill: "white"}}
-                          cornerRadius={0}/>}
-        data={typeNotes}
-        x="type"
-        y="noteCount"
-      />
-      <VictoryAxis dependentAxis />
-      <VictoryAxis independentAxis
-        tickLabelComponent={<VictoryLabel
-                              angle={-35}
-                              y={252}
-                              textAnchor="end"
-                              verticalAnchor="middle" />} />
-    </ChartWrapper>
-  );
-};
-
-const reduceTypeCount = (posts) =>  {
-  return posts.reduce((acc, post) => {
-    const postType = post.type;
-    const newVal = acc[postType] ? acc[postType] + 1 : 1;
-    acc[postType] = newVal;
-    return acc;
-  }, {});
-}
-
 const PieChart = ({data, title}) => {
   return(
     <Container className="tt-chart-container">
@@ -220,17 +167,6 @@ const PieChart = ({data, title}) => {
         </svg>
       </div>
     </Container>
-  );
-};
-
-const PostTypeBreakdownChart = ({posts}) => {
-  const postCountByType = reduceTypeCount(posts);
-  const typePosts = Object.keys(postCountByType)
-                          .map(k => {return {x: k, y: postCountByType[k]}})
-                          .sort((a, b) => b.y - a.y);
-
-  return(
-    <PieChart title="Post Types" data={typePosts} />
   );
 };
 
@@ -304,8 +240,6 @@ const AnalysisPage = ({blog, posts, originalPosts}) => {
           totalPostCount={posts.length} />
         <PostNotesOverTimeChart posts={originalPosts} />
         <TagNotesChart posts={originalPosts} />
-        <TypeNotesChart posts={originalPosts} />
-        <PostTypeBreakdownChart posts={originalPosts} />
       </Container>
     </div>
   );
