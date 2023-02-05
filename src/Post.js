@@ -28,18 +28,14 @@ const convertNsfwPostUrl = (post, nsfw) => {
 }
 
 const Post = ({ post, windowWidth, nsfw }) => {
-  /* For audio/video posts, the player/player.embed_code property is HTML for an
-   * iframe with fixed sizes. This is janky, but it looks better than the canned
-   * width. */
-  let embedContent = null;
-  if (post.player) {
-    if (post.player instanceof Array &&
-        (typeof post.player[1].embed_code === 'string' ||
-         post.player[1].embed_code instanceof String)) {
-      embedContent = post.player[1].embed_code.replace(/width="\d+"/, "width=\"100%\"");
-    } else if (typeof post.player === 'string' || post.play instanceof String) {
-      embedContent = post.player.replace(/width="\d+"/, "width=\"100%\"").replace(/height="\d+"/, "height=\"30%\"");
-    }
+
+  // get the element in the content.media array with the height closest to 300
+  const mediaUrl = (content) => {
+    const media = content.media;
+    const closest = media.reduce((prev, curr) => {
+      return (Math.abs(curr.height - 300) < Math.abs(prev.height - 300) ? curr : prev);
+    });
+    return closest.url;
   }
 
   return(
@@ -50,66 +46,44 @@ const Post = ({ post, windowWidth, nsfw }) => {
         target="_blank"
       >
         <div className="tt-card-contents">
-          {
-            post.type === 'photo' ? (
-              <div className="tt-card-image">
-                <Image alt={post.photos[0].caption || ""}
-                  src={post.photos[0].alt_sizes[1].url} />
-              </div>
-            ) : null
+          { post.content.map((content, i) => {
+            if (content.type === "image") {
+              return (<div className='tt-card-image' key={`${post.id}.${i}`}>
+                <Image alt={content.alt_text || ""} src={mediaUrl(content)} />
+              </div>)
+            } else if (content.type === "text") {
+              return (
+                <Card.Description key={`${post.id}.${i}`}>
+                  {content.text}
+                </Card.Description>)
+            } else if (content.type === "video") {
+              return (
+                <video width="320" height="240" controls>
+                  <source src={content.media?.url || content.url} type={content.media?.type || "video/mp4"} />
+                  Your browser does not support the video tag.
+                </video>
+              )
+            } else if (content.type === "link") {
+              return (
+                <Card.Description key={`${post.id}.${i}`}>
+                  <a target="_blank" href={content.url}>{content.title || content.url}</a>
+                </Card.Description>)
+
+            } else if (content.type === "audio") {
+              return (
+                <>
+                  { content.poster ? (<Image src={content.poster[0].url} />) : null}
+                  <audio controls>
+                    <source src={content.media?.url || content.url} type={content.media?.type || "audio/mp3"} />
+                  Your browser does not support the audio element.
+                  </audio>
+                </>
+              )
+            }
           }
-          {
-            embedContent !== null ? (
-              <div className="tt-card-image">
-                <div dangerouslySetInnerHTML={{ __html: embedContent }} />
-              </div>
-            ) : null
-          }
-          <Card.Content className="tt-card-written-contents">
-            {
-              post.title ? (
-                <Header size="medium">
-                  {
-                    post.url ? (
-                      <a href={post.url}>{post.title}</a>
-                    ) : post.title
-                  }
-                </Header>
-              ) : null
-            }
-            {
-              post.caption ? (
-                <Card.Description>
-                  <div dangerouslySetInnerHTML={{ __html: post.caption }} />
-                </Card.Description>
-              ) : null
-            }
-            {
-              post.body ? (
-                <Card.Description>
-                  <div dangerouslySetInnerHTML={{ __html: post.body }} />
-                </Card.Description>
-              ) : null
-            }
-            {
-              post.type === 'answer' ? (
-                <Card.Description>
-                  <div><strong>{post.asking_name}:</strong> <i>{post.question}</i></div>
-                  <Divider />
-                  <div dangerouslySetInnerHTML={{ __html: post.answer }} />
-                </Card.Description>
-              ) : null
-            }
-            {
-              post.type === 'quote' ? (
-                <Card.Description>
-                  <div dangerouslySetInnerHTML={{ __html: post.text }} />
-                  Source: <div dangerouslySetInnerHTML={{ __html: post.source }} />
-                </Card.Description>
-              ) : null
-            }
-          </Card.Content>
+          )}
         </div>
+
         <Card.Content extra>
           {
             post.tags && post.tags.length > 0 ? (

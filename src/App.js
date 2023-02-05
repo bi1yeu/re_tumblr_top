@@ -135,6 +135,7 @@ class App extends Component {
         const params = {api_key: API_KEY,
                         limit: stepSize,
                         reblog_info: true,
+                        npf: true,
                         offset};
         url.search = new URLSearchParams(params);
         return url;
